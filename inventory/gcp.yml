@@ -1,0 +1,28 @@
+---
+all:
+  vars:
+    # GKE cluster variables
+    gcp_project: grupotp-26 # ID of GCP Project
+    gcp_auth_kind: serviceaccount # Do not change
+    gcp_cred_file: ./grupotp-26-d813b5c6a715.json # Path to service account keys (json file downloaded from GCP)
+
+    gcp_zone: us-central1-a
+    gcp_image_type: ubuntu_containerd
+    gcp_machine_type: e2-small # Can be changed if necessary
+    gcp_disk_size_gb: 100 # Can be changed if necessary
+    gcp_initial_node_count: 2 # Number of nodes to create. Can be changed if necessary
+
+    # APP variables
+    app_ip: 
+    app_port: 8000 # Needs to be updated
+    app_username: testing
+    app_password: "password"
+
+
+    # Additional variables
+    namespace: laravelio
+    storagename: storage-laravelio
+    username: testing
+    password: "password"
+    dashboard_config_file: "dashboards.json"
+    dashboard_name: "LaravelIO - Dashboard"

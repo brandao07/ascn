@@ -1,0 +1,221 @@
+---
+- name: Create a k8s namespace  
+  kubernetes.core.k8s:    
+    state: present    
+    definition:      
+      apiVersion: v1      
+      kind: Namespace
+      metadata:        
+        name: "{{ namespace }}"
+
+- name: Create Storage Class
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: "{{ storagename }}"
+      provisioner: kubernetes.io/gce-pd
+      allowVolumeExpansion: true
+      volumeBindingMode: Immediate
+      reclaimPolicy: Delete
+
+- name: Create Volume Claim for MySQL pod
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: mysql-pv-claim
+        namespace: "{{ namespace }}"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: "{{ storagename }}"
+        resources:
+          requests:
+            storage: "20Gi"
+
+- name: Deploy MySql
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Deployment
+      metadata:
+        name: mysql-deployment
+        namespace: "{{ namespace }}"
+        labels:
+          app: mysql
+          tier: database
+      spec:
+        selector:
+          matchLabels:
+            app: mysql
+        strategy:
+          type: Recreate
+        template:
+          metadata:
+            labels:
+              app: mysql
+              tier: database
+          spec:
+            containers:
+              - name: mysql
+                image: mysql:latest
+                env:
+                  - name: MYSQL_ALLOW_EMPTY_PASSWORD
+                    value: "true"
+                  - name: MYSQL_DATABASE
+                    value: laravel
+                  - name: MYSQL_USER
+                    value: "{{ username }}"
+                  - name: MYSQL_PASSWORD
+                    value: "{{ password }}" # Use Secret object in real usage
+                ports:
+                  - containerPort: 3306
+                volumeMounts:
+                  - name: mysql-persistent-storage
+                    mountPath: /var/lib/mysql
+                resources:
+                  requests:
+                    cpu: "100m"
+                  limits:
+                    cpu: "200m"
+            volumes:
+              - name: mysql-persistent-storage
+                persistentVolumeClaim:
+                  claimName: mysql-pv-claim
+
+- name: Create MySQL service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: mysql
+        namespace: "{{ namespace }}"
+        labels:
+          app: mysql
+          tier: database
+      spec:
+        ports:
+          - port: 3306
+            name: mysql
+        clusterIP: None
+        selector:
+          app: mysql
+
+- name: Wait for MySQL Pod to be ready
+  kubernetes.core.k8s_info:
+    kind: Pod
+    label_selectors:
+      - app=mysql
+      - tier=database
+    namespace: "{{ namespace }}"
+    wait: yes
+    wait_sleep: 10
+    wait_timeout: 500
+
+- name: Deploy Laravelio
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: laravelio-deployment
+        namespace: "{{ namespace }}"
+        labels:
+          app: laravelio
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: laravelio
+        template:
+          metadata:
+            labels:
+              app: laravelio
+              tier: application
+          spec:
+            containers:
+              - name: laravelio
+                image: nandusl/myrepo
+                ports:
+                  - containerPort: 8000
+                env:
+                  - name: DB_HOST
+                    value: mysql
+                  - name: DB_DATABASE
+                    value: laravel
+                  - name: DB_USERNAME
+                    value: "{{ username }}"
+                  - name: DB_PASSWORD
+                    value: "{{ password }}" # Use secret object in real usage
+                  - name: SEED_DATABASE
+                    value: "true"
+                  - name: MIGRATE_DATABASE
+                    value: "true"
+                resources:
+                  requests:
+                    cpu: "100m"
+                  limits:
+                    cpu: "200m"
+
+- name: Create Laravelio service
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: laravelio-service
+        namespace: "{{ namespace }}"
+        labels:
+          app: laravelio
+          tier: application
+      spec:
+        type: LoadBalancer
+        selector:
+          app: laravelio
+        ports:
+          - targetPort: 8000
+            port: 8000
+
+- name: Wait for Laravelio Pod to be ready
+  kubernetes.core.k8s_info:
+    kind: Pod
+    label_selectors:
+      - app=laravelio
+      - tier=application
+    namespace: "{{ namespace }}"
+    wait: yes
+    wait_sleep: 10
+    wait_timeout: 500
+
+- name: Create Horizontal Pod Autoscaler (HPA) for LaravelIO
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: autoscaling/v1
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: laravelio-hpa
+        namespace: "{{ namespace }}"
+        labels:
+          app: laravelio
+      spec:
+        minReplicas: 1
+        maxReplicas: 10
+        scaleTargetRef:
+          apiVersion: apps/v1
+          kind: Deployment
+          name: laravelio-deployment
+        targetCPUUtilizationPercentage: 80
+
+- name: Update App IP in gcp.yml
+  shell: "sh get_ip.sh"

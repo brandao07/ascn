@@ -1,0 +1,8 @@
+---
+# Playbook to undeploy laravel.io and its component
+# TO DO
+- name: Undeploy Laravelio
+  hosts: localhost 
+  gather_facts: false
+  roles:
+    - laravelio_undeploy

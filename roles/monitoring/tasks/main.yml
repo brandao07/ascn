@@ -1,0 +1,11 @@
+---
+- name: Extract Dashboard ID
+  shell: 'gcloud monitoring dashboards list --project="{{ gcp_project }}" --format=json | jq -r ".[] | select(.displayName == \"{{ dashboard_name }}\") | .name"'
+  register: dashboard_id
+
+- name: Delete the dashboard if it exists
+  when: dashboard_id.stdout is defined and dashboard_id.stdout != ""
+  shell: 'gcloud monitoring dashboards delete "{{ dashboard_id.stdout }}" --quiet'
+
+- name: Create a new dashboard
+  shell: 'gcloud monitoring dashboards create --config-from-file="{{ dashboard_config_file }}" --project="{{ gcp_project }}"'

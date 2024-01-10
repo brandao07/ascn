@@ -1,0 +1,213 @@
+{
+    "category": "CUSTOM",
+    "displayName": "LaravelIO - Dashboard",
+    "mosaicLayout": {
+        "columns": 12,
+        "tiles": [
+            {
+                "height": 4,
+                "widget": {
+                    "title": "VM CPU Usage",
+                    "xyChart": {
+                        "chartOptions": {
+                            "mode": "COLOR"
+                        },
+                        "dataSets": [
+                            {
+                                "minAlignmentPeriod": "60s",
+                                "plotType": "LINE",
+                                "targetAxis": "Y1",
+                                "timeSeriesQuery": {
+                                    "apiSource": "DEFAULT_CLOUD",
+                                    "timeSeriesFilter": {
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "crossSeriesReducer": "REDUCE_SUM",
+                                            "groupByFields": [
+                                                "resource.label.\"project_id\""
+                                            ],
+                                            "perSeriesAligner": "ALIGN_SUM"
+                                        },
+                                        "filter": "metric.type=\"compute.googleapis.com/instance/cpu/utilization\" resource.type=\"gce_instance\"",
+                                        "secondaryAggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "crossSeriesReducer": "REDUCE_NONE",
+                                            "perSeriesAligner": "ALIGN_NONE"
+                                        }
+                                    }
+                                }
+                            }
+                        ],
+                        "thresholds": [],
+                        "timeshiftDuration": "0s",
+                        "yAxis": {
+                            "scale": "LINEAR"
+                        }
+                    }
+                },
+                "width": 6,
+                "xPos": 0,
+                "yPos": 2
+            },
+            {
+                "height": 4,
+                "widget": {
+                    "title": "LaravelIO CPU Usage (SUM)",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "metric.type=\"kubernetes.io/container/cpu/request_utilization\" resource.type=\"k8s_container\" resource.label.\"project_id\"=\"grupotp-26\" resource.label.\"namespace_name\"=\"laravelio\"",
+                                        "aggregation": {
+                                            "perSeriesAligner": "ALIGN_SUM",
+                                            "crossSeriesReducer": "REDUCE_NONE",
+                                            "groupByFields": []
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE",
+                                "minAlignmentPeriod": "60s",
+                                "targetAxis": "Y1",
+                                "legendTemplate": ""
+                            }
+                        ],
+                        "chartOptions": {
+                            "mode": "COLOR",
+                            "displayHorizontal": false
+                        },
+                        "timeshiftDuration": "0s",
+                        "yAxis": {
+                            "scale": "LINEAR"
+                        },
+                        "thresholds": []
+                    }
+                },
+                "width": 6,
+                "xPos": 6,
+                "yPos": 2
+            },
+            {
+                "height": 4,
+                "widget": {
+                    "title": "LaravelIO Storage Used",
+                    "pieChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "metric.type=\"kubernetes.io/container/memory/used_bytes\" resource.type=\"k8s_container\" resource.label.\"namespace_name\"=\"laravelio\"",
+                                        "aggregation": {
+                                            "perSeriesAligner": "ALIGN_MEAN",
+                                            "crossSeriesReducer": "REDUCE_SUM",
+                                            "groupByFields": [
+                                                "metadata.user_labels.\"tier\""
+                                            ]
+                                        }
+                                    },
+                                    "outputFullDuration": true
+                                },
+                                "minAlignmentPeriod": "60s",
+                                "sliceNameTemplate": ""
+                            }
+                        ],
+                        "chartType": "PIE"
+                    }
+                },
+                "width": 6,
+                "xPos": 0,
+                "yPos": 8
+            },
+            {
+                "height": 4,
+                "width": 6,
+                "xPos": 6,
+                "yPos": 8,
+                "widget": {
+                    "title": "Latency RTT 95º percentil",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "metric.type=\"networking.googleapis.com/vm_flow/rtt\" resource.type=\"gce_instance\" resource.label.\"project_id\"=\"grupotp-26\" metadata.user_labels.\"goog-k8s-cluster-name\"=\"ascn-cluster\"",
+                                        "aggregation": {
+                                            "perSeriesAligner": "ALIGN_DELTA",
+                                            "crossSeriesReducer": "REDUCE_PERCENTILE_95",
+                                            "groupByFields": []
+                                        },
+                                        "secondaryAggregation": {
+                                            "perSeriesAligner": "ALIGN_SUM",
+                                            "crossSeriesReducer": "REDUCE_NONE"
+                                        }
+                                    }
+                                },
+                                "plotType": "STACKED_AREA",
+                                "minAlignmentPeriod": "60s",
+                                "targetAxis": "Y1",
+                                "legendTemplate": ""
+                            }
+                        ],
+                        "chartOptions": {
+                            "mode": "COLOR",
+                            "displayHorizontal": false
+                        },
+                        "yAxis": {
+                            "scale": "LINEAR",
+                            "label": "y1Axis"
+                        },
+                        "thresholds": []
+                    }
+                }
+            },
+            {
+                "xPos": 0,
+                "yPos": 0,
+                "width": 12,
+                "height": 2,
+                "widget": {
+                    "title": "MAX CPU utilization",
+                    "scorecard": {
+                        "timeSeriesQuery": {
+                            "timeSeriesFilter": {
+                                "filter": "metric.type=\"compute.googleapis.com/instance/cpu/utilization\" resource.type=\"gce_instance\" resource.label.\"project_id\"=\"grupotp-26\"",
+                                "aggregation": {
+                                    "perSeriesAligner": "ALIGN_MEAN",
+                                    "crossSeriesReducer": "REDUCE_MAX"
+                                }
+                            },
+                            "unitOverride": "1"
+                        },
+                        "gaugeView": {
+                            "upperBound": 1.5
+                        },
+                        "thresholds": [
+                            {
+                                "value": 0.8,
+                                "color": "YELLOW",
+                                "direction": "ABOVE"
+                            },
+                            {
+                                "value": 1,
+                                "color": "RED",
+                                "direction": "ABOVE"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "height": 14,
+                "widget": {
+                    "collapsibleGroup": {
+                        "collapsed": false
+                    },
+                    "title": "Dashboards"
+                },
+                "width": 12,
+                "xPos": 0,
+                "yPos": 0
+            }
+        ]
+    }
+}

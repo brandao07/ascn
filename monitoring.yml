@@ -1,0 +1,6 @@
+---
+- name: Deploy Dashboard
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - monitoring
